@@ -1,0 +1,6 @@
+a, b, c, d, No
+c, f, g, d, No
+a, b, c, d, Yes
+z, w, e, e, No
+a, c, e, f, No
+v, b, n, f, Yes
