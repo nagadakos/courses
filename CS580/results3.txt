@@ -1,0 +1,10 @@
+(
+(Accuracy 0.6)
+(Precision 0.6)
+(Recall 1.0)
+(F1 0.7499999999999999)
+(TPR 1.0)
+(FPR 1.0)
+(Specificity 0.0)
+(Sensitivity 1.0)
+)

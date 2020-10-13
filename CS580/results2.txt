@@ -1,0 +1,4 @@
+Feature: 2, Info Gain: 0.5795770131468309
+Feature: 1, Info Gain: 0.45524608718033877
+Feature: 0, Info Gain: 0.45524608718033877
+Feature: 3, Info Gain: 0.12504963440926198
