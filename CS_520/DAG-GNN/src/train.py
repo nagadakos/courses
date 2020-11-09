@@ -24,34 +24,63 @@ from utils import *
 from modules import *
 
 parser = argparse.ArgumentParser()
-
+myParams = False
+    
 # -----------data parameters ------
 # configurations
-parser.add_argument('--data_type', type=str, default= 'synthetic',
-                    choices=['synthetic', 'discrete', 'real'],
-                    help='choosing which experiment to do.')
-parser.add_argument('--data_filename', type=str, default= 'alarm',
-                    help='data file name containing the discrete files.')
-parser.add_argument('--data_dir', type=str, default= 'data/',
-                    help='data file name containing the discrete files.')
-parser.add_argument('--data_sample_size', type=int, default=5000,
-                    help='the number of samples of data')
-parser.add_argument('--data_variable_size', type=int, default=10,
-                    help='the number of variables in synthetic generated data')
-parser.add_argument('--graph_type', type=str, default='erdos-renyi',
-                    help='the type of DAG graph by generation method')
-parser.add_argument('--graph_degree', type=int, default=2,
-                    help='the number of degree in generated DAG graph')
-parser.add_argument('--graph_sem_type', type=str, default='linear-gauss',
-                    help='the structure equation model (SEM) parameter type')
-parser.add_argument('--graph_linear_type', type=str, default='nonlinear_2',
-                    help='the synthetic data type: linear -> linear SEM, nonlinear_1 -> x=Acos(x+1)+z, nonlinear_2 -> x=2sin(A(x+0.5))+A(x+0.5)+z')
-parser.add_argument('--edge-types', type=int, default=2,
-                    help='The number of edge types to infer.')
-parser.add_argument('--x_dims', type=int, default=1, #changed here
-                    help='The number of input dimensions: default 1.')
-parser.add_argument('--z_dims', type=int, default=1,
-                    help='The number of latent variable dimensions: default the same as variable size.')
+if not myParams:
+    parser.add_argument('--data_type', type=str, default= 'synthetic',
+                        choices=['synthetic', 'discrete', 'real'],
+                        help='choosing which experiment to do.')
+    parser.add_argument('--data_filename', type=str, default= 'alarm',
+                        help='data file name containing the discrete files.')
+    parser.add_argument('--data_dir', type=str, default= 'data/',
+                        help='data file name containing the discrete files.')
+    parser.add_argument('--data_sample_size', type=int, default=5000,
+                        help='the number of samples of data')
+    parser.add_argument('--data_variable_size', type=int, default=10,
+                        help='the number of variables in synthetic generated data')
+    parser.add_argument('--graph_type', type=str, default='erdos-renyi',
+                        help='the type of DAG graph by generation method')
+    parser.add_argument('--graph_degree', type=int, default=2,
+                        help='the number of degree in generated DAG graph')
+    parser.add_argument('--graph_sem_type', type=str, default='linear-gauss',
+                        help='the structure equation model (SEM) parameter type')
+    parser.add_argument('--graph_linear_type', type=str, default='nonlinear_2',
+                        help='the synthetic data type: linear -> linear SEM, nonlinear_1 -> x=Acos(x+1)+z, nonlinear_2 -> x=2sin(A(x+0.5))+A(x+0.5)+z')
+    parser.add_argument('--edge-types', type=int, default=2,
+                        help='The number of edge types to infer.')
+    parser.add_argument('--x_dims', type=int, default=1, #changed here
+                        help='The number of input dimensions: default 1.')
+    parser.add_argument('--z_dims', type=int, default=1,
+                        help='The number of latent variable dimensions: default the same as variable size.')
+# ----------------------------------------------------------
+else:
+    parser.add_argument('--data_type', type=str, default= 'discrete',
+                        choices=['synthetic', 'discrete', 'real'],
+                        help='choosing which experiment to do.')
+    parser.add_argument('--data_filename', type=str, default= 'data1.pkl',
+                        help='data file name containing the discrete files.')
+    parser.add_argument('--data_dir', type=str, default= '../Data/Sachs/',
+                        help='data file name containing the discrete files.')
+    parser.add_argument('--data_sample_size', type=int, default=854,
+                        help='the number of samples of data')
+    parser.add_argument('--data_variable_size', type=int, default=11,
+                        help='the number of variables in synthetic generated data')
+    parser.add_argument('--graph_type', type=str, default='erdos-renyi',
+                        help='the type of DAG graph by generation method')
+    parser.add_argument('--graph_degree', type=int, default=2,
+                        help='the number of degree in generated DAG graph')
+    parser.add_argument('--graph_sem_type', type=str, default='linear-gauss',
+                        help='the structure equation model (SEM) parameter type')
+    parser.add_argument('--graph_linear_type', type=str, default='nonlinear_2',
+                        help='the synthetic data type: linear -> linear SEM, nonlinear_1 -> x=Acos(x+1)+z, nonlinear_2 -> x=2sin(A(x+0.5))+A(x+0.5)+z')
+    parser.add_argument('--edge-types', type=int, default=2,
+                        help='The number of edge types to infer.')
+    parser.add_argument('--x_dims', type=int, default=1, #changed here
+                        help='The number of input dimensions: default 1.')
+    parser.add_argument('--z_dims', type=int, default=1,
+                        help='The number of latent variable dimensions: default the same as variable size.')
 
 # -----------training hyperparameters
 parser.add_argument('--optimizer', type = str, default = 'Adam',
@@ -129,7 +158,7 @@ parser.add_argument('--dynamic-graph', action='store_true', default=False,
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 args.factor = not args.no_factor
-print(args)
+#print(args)
 
 
 torch.manual_seed(args.seed)
@@ -144,9 +173,10 @@ if args.save_folder:
     exp_counter = 0
     now = datetime.datetime.now()
     timestamp = now.isoformat()
-    save_folder = '{}/exp{}/'.format(args.save_folder, timestamp)
+    save_folder = '{}/exp{}/'.format(args.save_folder, timestamp.split(':')[0])
     # safe_name = save_folder.text.replace('/', '_')
-    os.makedirs(save_folder)
+    if not os.path.exists(save_folder):
+        os.makedirs(save_folder)
     meta_file = os.path.join(save_folder, 'metadata.pkl')
     encoder_file = os.path.join(save_folder, 'encoder.pt')
     decoder_file = os.path.join(save_folder, 'decoder.pt')
@@ -544,6 +574,21 @@ except KeyboardInterrupt:
     # print(graph)
     fdr, tpr, fpr, shd, nnz = count_accuracy(ground_truth_G, nx.DiGraph(graph))
     print('threshold 0.3, Accuracy: fdr', fdr, ' tpr ', tpr, ' fpr ', fpr, 'shd', shd, 'nnz', nnz)
+    
+    # Save Results and G truth graph
+    f = open('trueG_halted', 'w')
+    matG = np.matrix(nx.to_numpy_array(ground_truth_G))
+    for line in matG:
+        np.savetxt(f, line, fmt='%.5f')
+    f.closed
+
+    f1 = open('predG_halted', 'w')
+    print("Check",best_MSE_graph.shape)
+    matG1 = best_MSE_graph
+    for line in matG1:
+        print(line)
+        np.savetxt(f1, line, fmt='%.5f')
+    f1.closed
 
 
 f = open('trueG', 'w')

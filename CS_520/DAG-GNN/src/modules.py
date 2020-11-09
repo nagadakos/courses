@@ -13,10 +13,10 @@ class MLPEncoder(nn.Module):
     """MLP encoder module."""
     def __init__(self, n_in, n_xdims, n_hid, n_out, adj_A, batch_size, do_prob=0., factor=True, tol = 0.1):
         super(MLPEncoder, self).__init__()
-
+        print("dnn parameters:", n_in, n_xdims, n_hid, n_out, adj_A, batch_size)
         self.adj_A = nn.Parameter(Variable(torch.from_numpy(adj_A).double(), requires_grad=True))
         self.factor = factor
-
+        self.n_in = n_in
         self.Wa = nn.Parameter(torch.zeros(n_out), requires_grad=True)
         self.fc1 = nn.Linear(n_xdims, n_hid, bias = True)
         self.fc2 = nn.Linear(n_hid, n_out, bias = True)
@@ -36,10 +36,10 @@ class MLPEncoder(nn.Module):
 
 
     def forward(self, inputs, rel_rec, rel_send):
-
+        #inputs = inputs.view(-1, self.n_in, 1)
         if torch.sum(self.adj_A != self.adj_A):
             print('nan error \n')
-
+        #print(inputs.shape)
         # to amplify the value of A and accelerate convergence.
         adj_A1 = torch.sinh(3.*self.adj_A)
 

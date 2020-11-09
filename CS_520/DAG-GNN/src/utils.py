@@ -59,6 +59,7 @@ def simulate_random_dag(d: int,
     U = np.random.uniform(low=w_range[0], high=w_range[1], size=[d, d])
     U[np.random.rand(d, d) < 0.5] *= -1
     W = (B_perm != 0).astype(float) * U
+    print('GRAPH', W)
     G = nx.DiGraph(W)
     return G
 
@@ -410,12 +411,15 @@ def load_data(args, batch_size=1000, suffix='', debug = False):
         # generate data
         G = simulate_random_dag(d, degree, graph_type)
         X = simulate_sem(G, n, x_dims, sem_type, linear_type)
-
     elif args.data_type == 'discrete':
         # get benchmark discrete data
         if args.data_filename.endswith('.pkl'):
             with open(os.path.join(args.data_dir, args.data_filename), 'rb') as handle:
                 X = pickle.load(handle)
+            with open(os.path.join(args.data_dir, args.data_filename.split('.')[0] + '_graph.pkl'), 'rb') as handle2:
+                graph = pickle.load(handle2)
+                #print(graph)
+                G = nx.DiGraph(graph)
         else:
             all_data, graph = read_BNrep(args)
             G = nx.DiGraph(graph)
@@ -595,7 +599,8 @@ def nll_catogrical(preds, target, add_const = False):
 
 def nll_gaussian(preds, target, variance, add_const=False):
     mean1 = preds
-    mean2 = target
+    mean2 = target#.view(-1, *preds.shape[1:])
+    #print(mean1.shape, mean2.shape)
     neg_log_p = variance + torch.div(torch.pow(mean1 - mean2, 2), 2.*np.exp(2. * variance))
     if add_const:
         const = 0.5 * torch.log(2 * torch.from_numpy(np.pi) * variance)
