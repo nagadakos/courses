@@ -36,7 +36,7 @@ class MLPEncoder(nn.Module):
 
 
     def forward(self, inputs, rel_rec, rel_send):
-        #inputs = inputs.view(-1, self.n_in, 1)
+        inputs = inputs.view(-1, self.n_in, 1)
         if torch.sum(self.adj_A != self.adj_A):
             print('nan error \n')
         #print(inputs.shape)

@@ -24,7 +24,7 @@ from utils import *
 from modules import *
 
 parser = argparse.ArgumentParser()
-myParams = False
+myParams = True
     
 # -----------data parameters ------
 # configurations
@@ -56,6 +56,7 @@ if not myParams:
                         help='The number of latent variable dimensions: default the same as variable size.')
 # ----------------------------------------------------------
 else:
+    # python train.py --data_filename 'data.npy' --data_dir '../Data/lingam_same_noice_var/data.pkl' --data_sample_size --5000 data_variable_size 12
     parser.add_argument('--data_type', type=str, default= 'discrete',
                         choices=['synthetic', 'discrete', 'real'],
                         help='choosing which experiment to do.')
@@ -359,8 +360,8 @@ def train(epoch, best_val_loss, ground_truth_G, lambda_A, c_A, optimizer):
         if torch.sum(output != output):
             print('nan error\n')
 
-        target = data
         preds = output
+        target = data.view(-1, preds.shape[1], preds.shape[2])
         variance = 0.
 
         # reconstruction accuracy loss
@@ -576,19 +577,23 @@ except KeyboardInterrupt:
     print('threshold 0.3, Accuracy: fdr', fdr, ' tpr ', tpr, ' fpr ', fpr, 'shd', shd, 'nnz', nnz)
     
     # Save Results and G truth graph
-    f = open('trueG_halted', 'w')
+    if not os.path.exists('./Results'):
+        os.makedirs('./Results')
+    print('\n\n',args.data_dir, '\n')
+    if myParams:
+        if 'Sachs' in args.data_dir:
+            dataFolderName = args.data_dir.split('/')[-2]
+        else:
+            dataFolderName = args.data_dir.split('\\')[-2] #.split('{}'.format(os.pathsep)))
+    else:
+        dataFolderName = 'dgn_synthetic'
+    file1 = os.path.join('Results', '{}_{}'.format(dataFolderName,'trueG'))
+    file2 = os.path.join('Results', '{}_{}'.format(dataFolderName,'predG'))
     matG = np.matrix(nx.to_numpy_array(ground_truth_G))
-    for line in matG:
-        np.savetxt(f, line, fmt='%.5f')
-    f.closed
-
-    f1 = open('predG_halted', 'w')
-    print("Check",best_MSE_graph.shape)
+    np.savetxt(file1, matG, fmt='%.5f')
+    # Save Prediciton
     matG1 = best_MSE_graph
-    for line in matG1:
-        print(line)
-        np.savetxt(f1, line, fmt='%.5f')
-    f1.closed
+    np.savetxt(file2, matG1, fmt='%.5f')
 
 
 f = open('trueG', 'w')
