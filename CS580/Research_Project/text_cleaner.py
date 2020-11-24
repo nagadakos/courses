@@ -185,7 +185,7 @@ def normalize_texts(texts, inTextLabel = '', outLabel = 'normalized',
         # model = api.load("word2vec-google-news-300")
         cont = Contractions(kv_model=model)
         cont.load_models()
-    for t in texts:
+    for i, t in enumerate(texts):
         print(t)
         if os.path.isfile(t):
             f2 = t.split('_')[0]+'_' +outLabel +'.txt' # in name is patientx.txt -> patientx_corrected.txt
@@ -212,8 +212,8 @@ def normalize_texts(texts, inTextLabel = '', outLabel = 'normalized',
             isEntity = 0
             edit = token.text.lower()
             edit = edit.lower()
-            if i < 100:
-                print('Initial edit',edit)
+            #if i < 100:
+                #print('Initial edit',edit)
             # Check if token is date...
             tokenIsDate, tokenIsTime = 0,0
             if is_date(token.text):
@@ -240,6 +240,9 @@ def normalize_texts(texts, inTextLabel = '', outLabel = 'normalized',
             elif '</e' in edit:
                 edit = edit.split('<')[0]
                 #print('</e found', edit)
+                isEntity = 1
+            elif '</a' in edit:
+                edit = edit.split('<')[0]
                 isEntity = 1
                 
             if tokenIsDate == 0 and flag == True and isEntity == 0:
@@ -270,8 +273,8 @@ def normalize_texts(texts, inTextLabel = '', outLabel = 'normalized',
                 # convert tokens to base form
                 elif steps['lemmatization'] == True and token.lemma_ != "-PRON-" and flag == True:
                     edit = token.lemma_.lower()
-                    if i < 100:
-                        print("In lemma: ", edit)
+                    #if i < 100:
+                        #print("In lemma: ", edit)
                 elif steps['rmvCustom'] == True and token.text in customList:
                     flag = False
                 # remove <e> stuff from tweeter msgs
@@ -282,8 +285,8 @@ def normalize_texts(texts, inTextLabel = '', outLabel = 'normalized',
             # append tokens edited and not removed to list 
             # print('edit is', str(edit), flag)
             if edit != "" and flag == True:
-                if i < 100:
-                    print("Before list write", edit)
+                #if i < 100:
+                    #print("Before list write", edit)
                 if i+1 < docLen:
                     if (doc[i+1].text in string.punctuation and steps['rmvPunctuation'] is False) or (doc[i+1].text in deselect_punct):
                         clean_text.append(str(edit))        
@@ -291,7 +294,7 @@ def normalize_texts(texts, inTextLabel = '', outLabel = 'normalized',
                         clean_text.append(str(edit))        
                     else:
                         clean_text.append(str(edit) + " ")        
-        # Dump clean text to file
+            # Dump clean text to file
         # print(clean_text)
         fw.writelines(clean_text)
         # Close files
@@ -325,16 +328,28 @@ def main():
         # Extract only the tweets and labels; dates and the rest are irrelevant
         # Label Legend: 1: positive, -1: negative, 0: neutral, 2: mixed
         data = df['Anootated tweet'][1:]
-        labels = df['Unnamed: 4'][1:].to_numpy()
+        labels2 = df['Unnamed: 4'][1:].values.tolist()
+        labels2 = [str(l) for l in labels2]
+        for i, l in enumerate(labels2):
+            if (l != 'nan') & (l != 'irrelevant') & (l !='irrevelant') & (type(data.iloc[i]) != float):
+                labels2[i] = int(l)
+            elif (l == 'irrelevant') or (l =='irrevelant') or (l == 'nan') or (type(data.iloc[i]) == float):
+                labels2[i] = 5
+
+        labels = np.asarray(labels2)
         # Diseregard all tweets of mixed type, that is class 2
-        idxs = np.where(labels != 2)[0]
+        idxs = np.where((labels != 2) & (labels != 5))[0]
         data = data.iloc[idxs].values.tolist()
         labels = list(labels[idxs])
         # Clear relics
             
         with open(rootFile+'_filtered_data.txt', 'w', encoding='utf-8') as f:
             for i, d in enumerate(data):
-                f.write("{} \n".format(d))
+                # For a multi lined tweet just keep the first line.   
+                f.write("{} \n".format(d.split('\n')[0]))
+        with open(rootFile+'_filtered_data_idxs.txt', 'w', encoding='utf-8') as f:
+            for i, d in enumerate(data):
+                f.write("{} {}\n".format(d, idxs[i]))
         with open(rootFile+'_filtered_labels.txt', 'w', encoding='utf-8') as f:
             for i, l in enumerate(labels):
                 f.write("{} \n".format(l))
@@ -350,8 +365,8 @@ def main():
     normalize_texts(rootFile+'_filtered_data.txt', outLabel= outLabel,steps = steps)
     with open(rootFile+ '_'+outLabel+'_labels.txt', 'w', encoding='utf-8') as f:
             for i, l in enumerate(labels):
-                f.write("{} \n".format(l))
-    
+                f.write("{} \n".format(str(l).strip('\n')))
+                #np.savetxt(f, l)
    
 # -------------------------------------------------------------------
 
