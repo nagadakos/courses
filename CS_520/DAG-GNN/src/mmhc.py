@@ -19,19 +19,20 @@ def main():
     dataFile = '../Data/Sachs/1. cd3cd28.xls'
     #print(os.getcwd())
     df = pd.read_excel(dataFile)
-    df.columns = [i for i in range(1, 12)] # REname columns to numbers for easy of use and readability
-    #print(df)
+    df.columns = [i for i in range(0, 11)] # REname columns to numbers for easy of use and readability
+    print(df)
 
 
 
-    est = HillClimbSearch(df, scoring_method=K2Score(df),)
-    best_model = est.estimate( max_iter = 7)
-
+    est = HillClimbSearch(df, scoring_method=K2Score(df))
+    best_model = est.estimate( max_iter = 40)
+    m = to_adjascency_mat(best_model.edges(), 11)
     print(best_model.edges())
 
-    m = to_adjascency_mat(best_model.edges(), 11)
     saveMatFile = './Results/mmhc_sachs_data_1.npy'
+    saveMatTxt = './Results/mmhc_sachs_1_data.txt'
     np.save(saveMatFile, m)
+    np.savetxt(saveMatTxt, m, fmt = '%.3e')
     print(m)
 
 if __name__ == "__main__":

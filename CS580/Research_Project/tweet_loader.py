@@ -9,8 +9,9 @@ import random
 import sys
 from PIL import Image
 import numpy as np
-
+from collections import Counter
 import glob
+import pickle as pkl
 # load image and convert to and from NumPy array
 from numpy import asarray
 # End Imports
@@ -20,8 +21,6 @@ from numpy import asarray
 dir_path = os.path.dirname(os.path.realpath(__file__))
 data_path = os.path.join(dir_path,"Data")
 
-data_path_train = os.path.join(dir_path, "Data", "fruits-360_dataset", "fruits-360", "Training")
-data_path_test = os.path.join(dir_path, "Data", "fruits-360_dataset", "fruits-360", "Test")
 sys.path.insert(0, data_path)
 
 
@@ -30,9 +29,9 @@ sys.path.insert(0, data_path)
 # =================================================================================================================
 class Tweets(Dataset):
     
-    def __init__(self, randInputOrder = None, skipPerCent = None,  dataDir=None, csv_file=None, setSize = 0.8):
+    def __init__(self, randInputOrder = None, skipPerCent = None,  dataDir=None, csv_file=None, setSize = 0.8, repType = 'avgReps'):
         
-        allData, allTargets =  self._load_data()
+        allData, allTargets =  self._load_data(repType = repType)
         setLowerLimit = 0 if skipPerCent is None else int(allData.shape[0]* skipPerCent)
         setUpperLimit = setLowerLimit + int(allData.shape[0] * setSize)
         print("Lower Limit: {}, Upper Limit: {}".format(setLowerLimit, setUpperLimit))
@@ -83,32 +82,43 @@ class Tweets(Dataset):
 
     # --------------------------------------------------------------------------------
 
-    def _load_data(self, savedRepsFile=None, labelFile ='./Data/training-Obama-Romney-tweets_corrected2_normalized_no_stop_words_labels.txt' ):
+    def _load_data(self, savedRepsFile=None, labelFile ='./Data/training-Obama-Romney-tweets_corrected2_normalized_no_stop_words_labels.txt', repType = 'avgReps'):
         """ DESCRIPTION: This function will load data and tranform them into pytorch tensors. By default it loads already the representations found
                          in the Dta folder. If the file does not exist,  the function will load the preprocessed tweet file and compute the representation
                          then save them for future use. FInally, if a different argument is given in the savedRepsFile variable, then the function will load that instead
                          
            ARGUMENTS: savedRepsFile: (path or str): name of the file containing worv-vector representation. Must be in numpy format
                       labelFile: (array in txt): txt file containg the label of each tweet
+                      repType: (str avgReps | tweetReps): Selector for average representations per tweet, or tweet bundle reps.
                       
            RETUNRS:   m: tensor holdign the data. Dinemnsions numOFData x vector length
                       targets: tensor holding the target for each tweet. Dimensions: numOfData x 1 
         """
+        
+        tweetFile = './Data/training-Obama-Romney-tweets_corrected2_normalized_no_stop_words.txt'
+        repFile = './Data/avg_w2v_rep.npy' if repType == 'avgReps' else ('./Data/tweet_w2v_rep.npy' if repType == 'tweetReps' else '')
+        
         if savedRepsFile == None:
-            
-            if os.path.exists('./Data/avg_w2v_rep.npy'):
-                 m = np.load('./Data/avg_w2v_rep.npy')
+            if os.path.exists(repFile):
+                 m = np.load(repFile)
             else:
                 # Read all lines of tweet file, store them as list of strings
-                file1 = open(tweetFile, 'r') 
-                lines = file1.readlines()
+                #file1 = open(tweetFile, 'r') 
+                #lines = file1.readlines()
+                with open(tweetFile) as f:
+                    lines = f.read().splitlines() 
 
                 # Get the average word 2 vec representation of all tweets. Unknown words are omitted.
                 # Function to load word vectors pre-trained on Google News
-                m = word2vec_rep(lines)
-
+                if repType == 'avgReps':
+                    m = word2vec_rep(lines)
+                elif repType == 'tweetReps':
+                    m = tweet_summary_reps(lines)
+                else:
+                    print("Invalid representation load selector. Choose either avgReps of tweetReps")
+                    return -1
                 # Save reps to disk for future use
-                saveFile = './Data/avg_w2v_rep.npy'
+                saveFile = './Data/'+ repType.split('R')[0] +'_w2v_rep.npy'
                 np.save(saveFile,m)
         else:
             np.load(savedRepsFile)
@@ -120,6 +130,58 @@ class Tweets(Dataset):
 
 # End of Tweets class
 # ====================================================================================================================
+
+def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7):
+    lengths = []
+    splitLines = []
+    totalLines = 0
+    for l in lines:
+        splitLine = l.split(' ')
+        lineLen = len(splitLine)
+        totalLines += 1
+        lengths.append(lineLen)
+        splitLines.append(splitLine)
+        
+    occurence_count = Counter(lengths) 
+    # Find most frequent length. Structure is (top k most common tuples (val, freq)[choose tuple][val or freq])
+    freqs = occurence_count.most_common()
+    occurs, avgLen = 0, 0
+    maxVal = 0
+    # Pick the average size derived from the vals whose total frequency is 70% of the overall data
+    for i, t in enumerate(freqs):
+        occurs += t[1]
+        avgLen += float(t[0] * t[1])
+        maxVal = t[0] if t[0] > maxVal else maxVal
+        #print(occurs, avgLen, targetDesnity (def 0.7)* totalLines, i, t[0], t[1])
+        if occurs>= targetDesnity * totalLines:
+            break
+            
+    mode = int(avgLen/ occurs)
+    print('At {} density tweet length mode: {}, max val: {}'.format(targetDesnity, mode, maxVal))
+    targetSize= maxVal if lenSizeType == 'maxVal' else mode
+    # Turn all tweets to worv2vec reps. Pad all shorter and cut all large tweets to targetSize.
+   
+    cnt, flag  = 0, 0    
+    # Declare rep Matrix. Dimension of word2vec is 300. So, the matrix should be numOfTweets * targetSize
+    dim = 300
+    mat = np.zeros((len(lines), dim* targetSize))
+    w2v = load_w2v()
+    embedding = np.zeros(dim)
+     # Build  representations. if a tweet is longer than targetSize cut it to target size
+    for i, l in enumerate(splitLines):
+        if len(l) > targetSize:
+            l = l[:targetSize]
+        for j, w in enumerate(l):
+            # if word is known add its represention, otherwise treat it as 0.              
+            if w in w2v:
+                mat[i, j*300: (j+1)*300] = w2v[w]
+    
+    print("Tweet_word2vec size: {}".format(mat.shape))
+
+    return mat
+
+# --------------------------------------------
+
 
 # Arguments: None
 # Returns: w2v (dict)
@@ -197,15 +259,15 @@ def word2vec_rep(docs):
 # ================================================================
 def main():
     
-    dSet  = Tweets(setSize=0.7)
-    dSet2 = Tweets(randInputOrder = dSet.randOrder, skipPerCent = 0.1,setSize=0.1)
-    dSet3 = Tweets(randInputOrder = dSet.randOrder, skipPerCent = 0.8,setSize=0.1)
+    dSet  = Tweets(setSize=0.7, repType= 'tweetReps')
+    #dSet2 = Tweets(randInputOrder = dSet.randOrder, skipPerCent = 0.1,setSize=0.1)
+    #dSet3 = Tweets(randInputOrder = dSet.randOrder, skipPerCent = 0.8,setSize=0.1)
     
     print(dSet.data.shape)
-    print(dSet2.data.shape)
-    print(dSet3.data.shape)
-    print(dSet2.__getitem__(5)[0], dSet2.__getitem__(5)[1])
-    print(dSet3.__getitem__(5)[0], dSet3.__getitem__(5)[1])
+    #print(dSet2.data.shape)
+    #print(dSet3.data.shape)
+    #print(dSet2.__getitem__(5)[0], dSet2.__getitem__(5)[1])
+    #print(dSet3.__getitem__(5)[0], dSet3.__getitem__(5)[1])
     # --------------------
 
 if __name__ == "__main__":

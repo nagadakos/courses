@@ -60,13 +60,13 @@ else:
     parser.add_argument('--data_type', type=str, default= 'discrete',
                         choices=['synthetic', 'discrete', 'real'],
                         help='choosing which experiment to do.')
-    parser.add_argument('--data_filename', type=str, default= 'data1.pkl',
+    parser.add_argument('--data_filename', type=str, default= 'data.pkl',
                         help='data file name containing the discrete files.')
-    parser.add_argument('--data_dir', type=str, default= '../Data/Sachs/',
+    parser.add_argument('--data_dir', type=str, default= '../Data/Heinze-Deml/graph_01',
                         help='data file name containing the discrete files.')
-    parser.add_argument('--data_sample_size', type=int, default=854,
+    parser.add_argument('--data_sample_size', type=int, default=1000,#854,
                         help='the number of samples of data')
-    parser.add_argument('--data_variable_size', type=int, default=11,
+    parser.add_argument('--data_variable_size', type=int, default=12,#11
                         help='the number of variables in synthetic generated data')
     parser.add_argument('--graph_type', type=str, default='erdos-renyi',
                         help='the type of DAG graph by generation method')
@@ -74,7 +74,7 @@ else:
                         help='the number of degree in generated DAG graph')
     parser.add_argument('--graph_sem_type', type=str, default='linear-gauss',
                         help='the structure equation model (SEM) parameter type')
-    parser.add_argument('--graph_linear_type', type=str, default='nonlinear_2',
+    parser.add_argument('--graph_linear_type', type=str, default='nonlinear_3',
                         help='the synthetic data type: linear -> linear SEM, nonlinear_1 -> x=Acos(x+1)+z, nonlinear_2 -> x=2sin(A(x+0.5))+A(x+0.5)+z')
     parser.add_argument('--edge-types', type=int, default=2,
                         help='The number of edge types to infer.')
@@ -115,7 +115,7 @@ parser.add_argument('--decoder-hidden', type=int, default=64,
                     help='Number of hidden units.')
 parser.add_argument('--temp', type=float, default=0.5,
                     help='Temperature for Gumbel softmax.')
-parser.add_argument('--k_max_iter', type = int, default = 1e2,
+parser.add_argument('--k_max_iter', type = int, default = 20,
                     help ='the max iteration number for searching lambda and c')
 
 parser.add_argument('--encoder', type=str, default='mlp',
@@ -583,6 +583,10 @@ except KeyboardInterrupt:
     if myParams:
         if 'Sachs' in args.data_dir:
             dataFolderName = args.data_dir.split('/')[-2]
+        elif 'Heinze' in args.data_dir:
+            print(args.data_dir)
+            dataFolderName = args.data_dir.split('/')[-2] + '_' + args.data_dir.split('/')[-1] 
+            print(dataFolderName)
         else:
             dataFolderName = args.data_dir.split('\\')[-2] #.split('{}'.format(os.pathsep)))
     else:
@@ -595,6 +599,28 @@ except KeyboardInterrupt:
     matG1 = best_MSE_graph
     np.savetxt(file2, matG1, fmt='%.5f')
 
+ # Save Results and G truth graph
+if not os.path.exists('./Results'):
+    os.makedirs('./Results')
+print('\n\n',args.data_dir, '\n')
+if myParams:
+    if 'Sachs' in args.data_dir:
+        dataFolderName = args.data_dir.split('/')[-2]
+    elif 'Heinze' in args.data_dir:
+        print(args.data_dir)
+        dataFolderName = args.data_dir.split('/')[-2] + '_' + args.data_dir.split('/')[-1] 
+        print(dataFolderName)
+    else:
+        dataFolderName = args.data_dir.split('\\')[-2] #.split('{}'.format(os.pathsep)))
+else:
+    dataFolderName = 'dgn_synthetic'
+file1 = os.path.join('Results', '{}_{}'.format(dataFolderName,'trueG'))
+file2 = os.path.join('Results', '{}_{}'.format(dataFolderName,'predG'))
+matG = np.matrix(nx.to_numpy_array(ground_truth_G))
+np.savetxt(file1, matG, fmt='%.5f')
+# Save Prediciton
+matG1 = best_MSE_graph
+np.savetxt(file2, matG1, fmt='%.5f')
 
 f = open('trueG', 'w')
 matG = np.matrix(nx.to_numpy_array(ground_truth_G))
