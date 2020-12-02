@@ -25,7 +25,17 @@ device  = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # ========================================================================================================================
 # Functions and Network Template
 # ========================================================================================================================
-def load_data(dataPackagePath = None, bSize = 32, trainSize =0.8, testSize = None, valSize = 0):
+def load_data(dataPackagePath = None, bSize = 32, trainSize =0.8, testSize = None, valSize = 0, repType = 'avgReps'):
+    ''' DESCRIPTION: Function responsible to load data. Should hanlde all the workchain till constcting legitimate
+                     PyTorch dataloaders.
+        ARGUMENTS: repType (str; avgReps | tweetReps): selector for the representation of the data. 
+                   avgReps are the average representations for each tweets, excluding unknown words. DIMS: numOfTweets x 300
+                   tweetReps are the representations of each known word in the tweet up to a given upper word limit. By Default
+                   the limit is the maximum size found in all the tweets that account for 70% of  the total tweet number in the
+                   set. It can be set to the weighted average size instead.
+                   
+    
+    '''
     # bundle common args to the Dataloader module as a kewword list.
     # pin_memory reserves memory to act as a buffer for cuda memcopy 
     # operations
@@ -38,7 +48,7 @@ def load_data(dataPackagePath = None, bSize = 32, trainSize =0.8, testSize = Non
     # ******************
     
     # Load  PyTorch data set
-    trainSet = Tweets(setSize=trainSize)
+    trainSet = Tweets(setSize=trainSize, repType = repType)
     testSet = Tweets(randInputOrder = trainSet.randOrder, skipPerCent = trainSize, setSize=testSize)
     # Create a PyTorch Dataloader
     trainLoader = torch.utils.data.DataLoader(trainSet, batch_size = bSize, **comArgs )
@@ -82,13 +92,18 @@ def main():
     # Handle command line input and load data
     # Get keyboard arguments, if any! (Try the dictionary approach in the code aboe for some practice!)
     lr, m , bSize, epochs, debug, trainClassifier, trainEncoder = parse_args()
+    
+    # Select Representation type for data and set relevant parameters
+    repType = 'tweetReps' # 'avgReps', 'tweetReps'
+    dataSize = [1, 300] if repType == 'avgReps' else [1,4200]
+    
     # Load data, initialize model and optimizer!
     # Use this for debugg, loads a tiny amount of dummy data!
     if debug:
-        trainLoader, testLoader = load_data(dataPackagePath = os.path.join(dir_path, 'Data','dummy.npz'),  bSize=bSize)
+        trainLoader, testLoader = load_data(bSize=bSize, repType = repType)
         fitArgs = dict(epochs = 1, earlyStopIdx = 1, earlyTestStopIdx = 1)
     else:
-        trainLoader, testLoader = load_data(bSize=bSize)
+        trainLoader, testLoader = load_data(bSize=bSize, repType = repType)
         fitArgs = dict(epochs = epochs, earlyStopIdx = 0, earlyTestStopIdx = 0)
     # ---|
     
@@ -100,7 +115,7 @@ def main():
     if trainClassifier:
         print("Top level device is :{}".format(device))
         # Declare your model and other parameters here
-        embeddingNetKwargs = dict(device=device)
+        embeddingNetKwargs = dict(device=device, dataSize = [1,4200])
         #embeddingNet = eNets.ANET(**embeddingNetKwargs).to(device)
         #embeddingNet = eNets.MultiLayerPerceptron(**embeddingNetKwargs).to(device)
         embeddingNet = eNets.SimpleConvolutional(**embeddingNetKwargs).to(device)

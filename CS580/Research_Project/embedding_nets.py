@@ -109,7 +109,7 @@ class MultiLayerPerceptron(nn.Module):
     accuracy = 0
     trainLoss= 0
     testLoss = 0
-    def __init__(self, device = 'cpu', dataSize = [3,100,100],
+    def __init__(self, device = 'cpu', dataSize = [1, 300],
                   dims = {'nodes':[300, 100, 32, 3], 'kSizes':[5,5,3,3,3,3], 'strides':[1,1,2,2,2,2], 'linear1':[200,120]},
                  **kwargs):
         """ DESCRIPTIONS: Used to initialzie the model. This is the workhorse. pass all required arguments in the init
@@ -145,6 +145,7 @@ class MultiLayerPerceptron(nn.Module):
         # Skeleton of this network; the blocks to be used.
         # Similar to Fischer prize building blocks!
         self.layers = []
+        dims['nodes'][0] = dataSize[1] # Get the input dataSize for first layer
         # Layers Declaration
         for i in range(0,  self.numOfDenseLayers-1):
             self.layers += [nn.Linear(dims['nodes'][i], dims['nodes'][i+1])]
@@ -234,7 +235,7 @@ class SimpleConvolutional(nn.Module):
             h.append(hi)
         
         self.linearSize = dims['nodes'][-1] * h[-1]
-        print("Dims for linear layaer: " + str(self.linearSize))
+        #print("Dims for linear layaer: " + str(self.linearSize))
         self.h= h
         # ---|
         
@@ -263,7 +264,7 @@ class SimpleConvolutional(nn.Module):
     # organized, meaningful architecture here.
     def forward(self, x):
         x = x.unsqueeze(1) 
-            
+        #print(x.shape)    
         for i, layer in enumerate(self.convLayers):
             x = F.relu(layer(x))
             #print("Layer {}, shape: {}".format(i, x.shape))
