@@ -49,7 +49,7 @@ def load_data(dataPackagePath = None, bSize = 32, trainSize =0.8, testSize = Non
     
     # Load  PyTorch data set
     trainSet = Tweets(setSize=trainSize, repType = repType)
-    testSet = Tweets(randInputOrder = trainSet.randOrder, skipPerCent = trainSize, setSize=testSize)
+    testSet = Tweets(randInputOrder = trainSet.randOrder, skipPerCent = trainSize, setSize=testSize, repType = repType)
     # Create a PyTorch Dataloader
     trainLoader = torch.utils.data.DataLoader(trainSet, batch_size = bSize, **comArgs )
     testLoader = torch.utils.data.DataLoader(testSet, batch_size = bSize, **comArgs)

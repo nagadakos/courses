@@ -12,6 +12,7 @@ import numpy as np
 from collections import Counter
 import glob
 import pickle as pkl
+import re
 # load image and convert to and from NumPy array
 from numpy import asarray
 # End Imports
