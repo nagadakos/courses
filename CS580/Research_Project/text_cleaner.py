@@ -187,7 +187,7 @@ def normalize_texts(texts, inTextLabel = '', outLabel = 'normalized',
         cont.load_models()
     for i, t in enumerate(texts):
         if os.path.isfile(t):
-            f2 = t.rsplit('_',2)[0]+'_' +outLabel +'.txt' # in name is patientx.txt -> patientx_corrected.txt
+            f2 = t.rsplit('_', 2)[0]+'_' +outLabel +'.txt' # in name is patientx.txt -> patientx_corrected.txt
             fr, fw = open(t, 'r', encoding='utf8'), open(f2,'w+', encoding='utf8')
         else:
             f2 = inTextLabel+'_' +outLabel +'.txt' # in name is patientx.txt -> patientx_corrected.txt

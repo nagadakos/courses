@@ -177,7 +177,7 @@ def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7):
     cnt, flag  = 0, 0    
     # Declare rep Matrix. Dimension of word2vec is 300. So, the matrix should be numOfTweets * targetSize
     dim = 300
-    mat = np.zeros((len(lines), dim* targetSize))
+    mat = np.ones((len(lines), dim* targetSize))* (-2)
     w2v = load_w2v()
     embedding = np.zeros(dim)
     print(type(w2v))

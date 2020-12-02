@@ -35,8 +35,7 @@ def train_classifier(model, indata, device, lossFn, optim,  **kwargs):
             target = target.to(device)
                 
         # B. Forward pass calculate output of model
-        output      = model.encoder.forward(*data)
-                    
+        output      = model.encoder(*data)
         # C. Loss computation part.
         # Convention for all loss and reconstruction inputs is Data, Target, miscInputs. Model forward MUST be
         # Designed to match its output to the loss functions' input pattern.
@@ -115,6 +114,7 @@ def test_classifier(model, testLoader, device, lossFn, **kwargs):
             # Find the max along a row but maitain the original dimenions.
             # in this case  a 3 -dimensional array.
             pred   = output.max(dim = 1, keepdim = True)
+            #print(label, pred[1])
             # Select the indexes of the prediction maxes.
             # Reshape the output vector in the same form of the label one, so they 
             # can be compared directly; from batchsize x 10 to batchsize. Compare
