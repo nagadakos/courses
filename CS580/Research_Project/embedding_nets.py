@@ -1,4 +1,4 @@
-import torch
+
 import torchvision
 import torchvision.datasets as tdata
 import torchvision.transforms as tTrans
@@ -195,7 +195,7 @@ class SimpleConvolutional(nn.Module):
     trainLoss= 0
     testLoss = 0
     def __init__(self, device = 'cpu', dataSize = [1,300], verbose = True,
-                  dims = {'nodes':[50, 40, 30, 30], 'kSizes':[3,3,3,3], 'strides':[1,1,1,1], 'linearSizes':[200], 'targetSize': 3, 'latentDim':50, 'poolKSizes': [3,3,3,3], 'poolStrides':[2,2,2,2]},
+                  dims = {'nodes':[200, 200, 100, 50], 'kSizes':[9, 9,7,5], 'strides':[2,2,2,2], 'linearSizes':[400], 'targetSize': 3, 'latentDim':50, 'poolKSizes': [3,3,3,3], 'poolStrides':[2,2,2,2]},
                  **kwargs):
         """ DESCRIPTIONS: Used to initialzie the model. This is the workhorse. pass all required arguments in the init
                           as the example here, hwere the device (cpu or gpu), the datasize and the dims for the various layers
@@ -257,6 +257,7 @@ class SimpleConvolutional(nn.Module):
         #print(self.convLayers)
         # Device handling CPU or GPU 
         self.device = device
+        print([m for m in self.modules()])
     
     # SECTION A.2
     # ***********
@@ -266,11 +267,11 @@ class SimpleConvolutional(nn.Module):
         x = x.unsqueeze(1) 
         #print(x.shape)    
         for i, layer in enumerate(self.convLayers):
-            x = F.relu(layer(x))
+            x = F.leaky_relu(layer(x))
             #print("Layer {}, shape: {}".format(i, x.shape))
         x = x.reshape(-1, self.linearSize)
-        x = F.relu(self.linear(x))
-        x = F.relu(self.toClass(x))
+        x = F.leaky_relu(self.linear(x))
+        x = F.leaky_relu(self.toClass(x))
         return x
     
     # ------------------

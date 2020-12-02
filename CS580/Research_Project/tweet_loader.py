@@ -147,6 +147,7 @@ def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7):
     totalLines = 0
     for l in lines:
         splitLine = l.split(' ')
+        splitLine = [p for p in splitLine if p != '']
         lineLen = len(splitLine)
         totalLines += 1
         lengths.append(lineLen)
@@ -174,7 +175,7 @@ def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7):
     cnt, flag  = 0, 0    
     # Declare rep Matrix. Dimension of word2vec is 300. So, the matrix should be numOfTweets * targetSize
     dim = 300
-    mat = np.zeros((len(lines), dim* targetSize))
+    mat = np.ones((len(lines), dim* targetSize))* (-2)
     w2v = load_w2v()
     embedding = np.zeros(dim)
      # Build  representations. if a tweet is longer than targetSize cut it to target size

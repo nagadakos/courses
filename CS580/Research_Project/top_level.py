@@ -95,7 +95,7 @@ def main():
     
     # Select Representation type for data and set relevant parameters
     repType = 'tweetReps' # 'avgReps', 'tweetReps'
-    dataSize = [1, 300] if repType == 'avgReps' else [1,4200]
+    dataSize = [1, 300] if repType == 'avgReps' else [1,3300]
     
     # Load data, initialize model and optimizer!
     # Use this for debugg, loads a tiny amount of dummy data!
@@ -115,7 +115,7 @@ def main():
     if trainClassifier:
         print("Top level device is :{}".format(device))
         # Declare your model and other parameters here
-        embeddingNetKwargs = dict(device=device, dataSize = [1,4200])
+        embeddingNetKwargs = dict(device=device, dataSize = dataSize)
         #embeddingNet = eNets.ANET(**embeddingNetKwargs).to(device)
         #embeddingNet = eNets.MultiLayerPerceptron(**embeddingNetKwargs).to(device)
         embeddingNet = eNets.SimpleConvolutional(**embeddingNetKwargs).to(device)
