@@ -25,14 +25,17 @@ data_path = os.path.join(dir_path,"Data")
 sys.path.insert(0, data_path)
 
 
+def_tweet_file = os.path.join(data_path,'training-Obama-Romney-tweets_corrected2_normalized_no_stop_words.txt')
+def_label_file = os.path.join(data_path, 'training-Obama-Romney-tweets_corrected2_normalized_no_stop_words_labels.txt')
+
 # =================================================================================================================
 # Class Declaration
 # =================================================================================================================
 class Tweets(Dataset):
     
-    def __init__(self, randInputOrder = None, skipPerCent = None,  dataDir=None, csv_file=None, setSize = 0.8, repType = 'avgReps'):
+    def __init__(self, tweetFile= def_tweet_file, labelFile=def_label_file, randInputOrder = None, skipPerCent = None,  dataDir=None, csv_file=None, setSize = 0.8, repType = 'avgReps'):
         
-        allData, allTargets =  self._load_data(repType = repType)
+        allData, allTargets =  self._load_data(tweetFile = tweetFile, labelFile = def_label_file, repType = repType)
         setLowerLimit = 0 if skipPerCent is None else int(allData.shape[0]* skipPerCent)
         setUpperLimit = setLowerLimit + int(allData.shape[0] * setSize)
         print("Lower Limit: {}, Upper Limit: {}".format(setLowerLimit, setUpperLimit))
@@ -83,7 +86,7 @@ class Tweets(Dataset):
 
     # --------------------------------------------------------------------------------
 
-    def _load_data(self, savedRepsFile=None, labelFile ='./Data/training-Obama-Romney-tweets_corrected2_normalized_no_stop_words_labels.txt', repType = 'avgReps'):
+    def _load_data(self, tweetFile = def_tweet_file, savedRepsFile=None, labelFile = def_label_file, repType = 'avgReps'):
         """ DESCRIPTION: This function will load data and tranform them into pytorch tensors. By default it loads already the representations found
                          in the Dta folder. If the file does not exist,  the function will load the preprocessed tweet file and compute the representation
                          then save them for future use. FInally, if a different argument is given in the savedRepsFile variable, then the function will load that instead
@@ -95,17 +98,17 @@ class Tweets(Dataset):
            RETUNRS:   m: tensor holdign the data. Dinemnsions numOFData x vector length
                       targets: tensor holding the target for each tweet. Dimensions: numOfData x 1 
         """
+        # Get base path and add keywords to check if representation file already exists; comptue it otherwise
+        rootPath = tweetFile.split('.')[0]
+        repFile = 'avg_w2v_rep.npy' if repType == 'avgReps' else ('tweet_w2v_rep.npy' if repType == 'tweetReps' else '')
+        repFile = '_'.join((rootPath, repFile))
         
-        tweetFile = './Data/training-Obama-Romney-tweets_corrected2_normalized_no_stop_words.txt'
-        repFile = './Data/avg_w2v_rep.npy' if repType == 'avgReps' else ('./Data/tweet_w2v_rep.npy' if repType == 'tweetReps' else '')
-        
+        # IF not ready rep are given check if default exist
         if savedRepsFile == None:
             if os.path.exists(repFile):
                  m = np.load(repFile)
             else:
                 # Read all lines of tweet file, store them as list of strings
-                #file1 = open(tweetFile, 'r') 
-                #lines = file1.readlines()
                 with open(tweetFile) as f:
                     lines = f.read().splitlines() 
 
@@ -119,14 +122,13 @@ class Tweets(Dataset):
                     print("Invalid representation load selector. Choose either avgReps of tweetReps")
                     return -1
                 # Save reps to disk for future use
-                saveFile = './Data/'+ repType.split('R')[0] +'_w2v_rep.npy'
+                saveFile = '_'.join((rootPath, repType.split('R')[0] +'_w2v_rep.npy'))
                 np.save(saveFile,m)
         else:
             np.load(savedRepsFile)
             
         targets = np.loadtxt(labelFile)
         targets += 1 # Need to be non negative. Tweets class has -1 fro negative sentiment label
-
         return torch.from_numpy(m).type(torch.float32), torch.from_numpy(targets).type(torch.long)
 
 # End of Tweets class

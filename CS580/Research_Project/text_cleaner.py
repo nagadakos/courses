@@ -186,7 +186,7 @@ def normalize_texts(texts, inTextLabel = '', outLabel = 'normalized',
         cont = Contractions(kv_model=model)
         cont.load_models()
     for i, t in enumerate(texts):
-        print(t)
+        #print(t)
         if os.path.isfile(t):
             f2 = t.split('_')[0]+'_' +outLabel +'.txt' # in name is patientx.txt -> patientx_corrected.txt
             fr, fw = open(t, 'r', encoding='utf8'), open(f2,'w+', encoding='utf8')
@@ -313,44 +313,66 @@ def get_target_cols(df, target, saveFile=None):
         writer.save()
     return dfNew
 
-
 # -------------------------------------------------------------------------------------------------------
 #
 # -------------------------------------------------------------------------------------------------------
-def main():
-    file = r'Data/training-Obama-Romney-tweets.xlsx'
+def process_data(file = 'Data/training-Obama-Romney-tweets.xlsx', obamaCentric = False, sheet = 0):
+    
     rootFile = file.split('.')[0]
-    if os.path.isfile(rootFile+'_filtered_data.txt') and os.path.isfile(rootFile+'_filtered_labels.txt'):
-        with open(rootFile+'_filtered_labels.txt', 'r') as f:
+    mod = 'Romney_to_Obama_' if (sheet == 1 or sheet == 'Romney') else ''
+    dataFile = '_'.join((rootFile, mod+'filtered_data.txt'))
+    labelFile = '_'.join((rootFile, mod+'filtered_labels.txt'))
+    
+    print(dataFile)
+    if os.path.isfile(dataFile) and os.path.isfile(labelFile):
+        with open(labelFile) as f:
             labels = f.readlines()
     else:
-        df = pd.read_excel(file)
+        df = pd.read_excel(file, sheet_name = sheet)
         # Extract only the tweets and labels; dates and the rest are irrelevant
         # Label Legend: 1: positive, -1: negative, 0: neutral, 2: mixed
         data = df['Anootated tweet'][1:]
         labels2 = df['Unnamed: 4'][1:].values.tolist()
         labels2 = [str(l) for l in labels2]
         for i, l in enumerate(labels2):
-            if (l != 'nan') & (l != 'irrelevant') & (l !='irrevelant') & (type(data.iloc[i]) != float):
-                labels2[i] = int(l)
-            elif (l == 'irrelevant') or (l =='irrevelant') or (l == 'nan') or (type(data.iloc[i]) == float):
+            try:
+                if type(data.iloc[i]) != float:
+                    labels2[i] = int(l)
+                else:
+                    labels2[i] = 5 # for that annoyiing nan data case
+            except:
                 labels2[i] = 5
+            #if (l != 'nan') & (l != 'irrelevant') & (l !='irrevelant') & (type(data.iloc[i]) != float) &(l != '!!!!'):
+            #    print(l)
+            #    labels2[i] = int(l)
+            #elif (l == 'irrelevant') or (l =='irrevelant') or (l == 'nan') or (type(data.iloc[i]) == float) or (l == '!!!!'):
+            #    labels2[i] = 5
 
         labels = np.asarray(labels2)
+        
         # Diseregard all tweets of mixed type, that is class 2
         idxs = np.where((labels != 2) & (labels != 5))[0]
         data = data.iloc[idxs].values.tolist()
-        labels = list(labels[idxs])
-        # Clear relics
-            
-        with open(rootFile+'_filtered_data.txt', 'w', encoding='utf-8') as f:
+        
+        # Flip labels so positive refers to Obama always
+        if obamaCentric:
+            labels = labels[idxs] * -1
+        else:
+            labels = labels[idxs]
+        labels = list(labels)
+        
+        # Clear tweeter relics
+        for i, l in enumerate(data):
+            data[i] = re.sub(r'(<e>|</e>|<a>|</a>)', '', l)
+        
+        with open(dataFile, 'w', encoding='utf-8') as f:
             for i, d in enumerate(data):
                 # For a multi lined tweet just keep the first line.   
                 f.write("{} \n".format(d.split('\n')[0]))
-        with open(rootFile+'_filtered_data_idxs.txt', 'w', encoding='utf-8') as f:
+        with open('_'.join((rootFile, mod+'filtered_data_idxs.txt')), 'w', encoding='utf-8') as f:
             for i, d in enumerate(data):
                 f.write("{} {}\n".format(d, idxs[i]))
-        with open(rootFile+'_filtered_labels.txt', 'w', encoding='utf-8') as f:
+        with open(labelFile, 'w', encoding='utf-8') as f:
             for i, l in enumerate(labels):
                 f.write("{} \n".format(l))
     
@@ -361,9 +383,9 @@ def main():
     # ---|
     
     # Normalize texts
-    outLabel ='corrected2_normalized_no_stop_words' 
-    normalize_texts(rootFile+'_filtered_data.txt', outLabel= outLabel,steps = steps)
-    with open(rootFile+ '_'+outLabel+'_labels.txt', 'w', encoding='utf-8') as f:
+    outLabel = mod + 'corrected2_normalized_no_stop_words' 
+    normalize_texts('_'.join((rootFile, mod+'filtered_data.txt')), outLabel= outLabel,steps = steps)
+    with open('_'.join((rootFile, outLabel, 'labels.txt')), 'w', encoding='utf-8') as f:
             for i, l in enumerate(labels):
                 f.write("{} \n".format(str(l).strip('\n')))
                 #np.savetxt(f, l)
@@ -371,4 +393,4 @@ def main():
 # -------------------------------------------------------------------
 
 if __name__ == '__main__':
-    main()
+    process_data()

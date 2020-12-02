@@ -24,7 +24,7 @@ class SimpleLSTM(nn.Module):
 
     def __init__(self, vocab_size, output_size, embedding_dim, hidden_dim, n_layers, drop_prob=0.5):
         # Boiler plate code. Any init should declare the following
-        self.descr = 'SimpleRNN'
+        self.descr = 'SimpleLSTM'
         self.lr_policy = 'plateau'
         self.metric = 0
         self.classMethod = 'label'
@@ -38,7 +38,7 @@ class SimpleLSTM(nn.Module):
         """
         Initialize the model by setting up the layers.
         """
-        super(SentimentRNN, self).__init__()
+        super(SimpleLSTM, self).__init__()
 
         self.output_size = output_size
         self.n_layers = n_layers
