@@ -312,7 +312,7 @@ class ClassifierFrame(nn.Module):
         torch.save(self.encoder.state_dict(), savePath)
     #-------------------------------------------------------------------------------------------------------------------------------
 
-    def load(self, loadPath = None):
+    def load(self, device = 'cpu', loadPath = None):
 
         if loadPath is None:
             loadPath = os.path.join(self.saveModelsFolder, self.defPlotSaveTitle)
@@ -323,7 +323,7 @@ class ClassifierFrame(nn.Module):
         else:
             print("Loading saved model: {} to model {}@{}".format(loadPath, self.descr, hex(id(self))))
 
-        self.encoder.load_state_dict(torch.load(loadPath)) 
+        self.encoder.load_state_dict(torch.load(loadPath, map_location= torch.device(device)) 
 
     #-------------------------------------------------------------------------------------------------------------------------------
 
