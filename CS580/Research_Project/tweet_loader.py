@@ -33,9 +33,9 @@ def_label_file = os.path.join(data_path, 'training-Obama-Romney-tweets_corrected
 # =================================================================================================================
 class Tweets(Dataset):
     
-    def __init__(self, tweetFile= def_tweet_file, labelFile=def_label_file, randInputOrder = None, skipPerCent = None,  dataDir=None, csv_file=None, setSize = 0.8, repType = 'avgReps'):
+    def __init__(self, tweetFile= def_tweet_file, labelFile=def_label_file, randInputOrder = None, skipPerCent = None,  dataDir=None, csv_file=None, setSize = 0.8, repType = 'avgReps', targetSize = 0):
         
-        allData, allTargets =  self._load_data(tweetFile = tweetFile, labelFile = def_label_file, repType = repType)
+        allData, allTargets =  self._load_data(tweetFile = tweetFile, labelFile = def_label_file, repType = repType, targetSize = 0)
         setLowerLimit = 0 if skipPerCent is None else int(allData.shape[0]* skipPerCent)
         setUpperLimit = setLowerLimit + int(allData.shape[0] * setSize)
         print("Lower Limit: {}, Upper Limit: {}".format(setLowerLimit, setUpperLimit))
@@ -90,7 +90,7 @@ class Tweets(Dataset):
 
     # --------------------------------------------------------------------------------
 
-    def _load_data(self, tweetFile = def_tweet_file, savedRepsFile=None, labelFile = def_label_file, repType = 'avgReps'):
+    def _load_data(self, tweetFile = def_tweet_file, savedRepsFile=None, labelFile = def_label_file, repType = 'avgReps', targetSize = 0):
         """ DESCRIPTION: This function will load data and tranform them into pytorch tensors. By default it loads already the representations found
                          in the Dta folder. If the file does not exist,  the function will load the preprocessed tweet file and compute the representation
                          then save them for future use. FInally, if a different argument is given in the savedRepsFile variable, then the function will load that instead
@@ -122,7 +122,7 @@ class Tweets(Dataset):
                 if repType == 'avgReps':
                     m = word2vec_rep(lines)
                 elif repType == 'tweetReps':
-                    m = tweet_summary_reps(lines)
+                    m = tweet_summary_reps(lines, targetSize = 0)
                 else:
                     print("Invalid representation load selector. Choose either avgReps of tweetReps")
                     return -1
@@ -143,7 +143,7 @@ class Tweets(Dataset):
 # End of Tweets class
 # ====================================================================================================================
 
-def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7):
+def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7, targetSize = 0):
     lengths = []
     splitLines = []
     totalLines = 0
@@ -171,7 +171,8 @@ def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7):
             
     mode = int(avgLen/ occurs)
     print('At {} density tweet length mode: {}, max val: {}'.format(targetDesnity, mode, maxVal))
-    targetSize= maxVal if lenSizeType == 'maxVal' else mode
+    if targetSize == 0:
+        targetSize= maxVal if lenSizeType == 'maxVal' else mode
     # Turn all tweets to worv2vec reps. Pad all shorter and cut all large tweets to targetSize.
    
     cnt, flag  = 0, 0    
@@ -180,17 +181,17 @@ def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7):
     mat = np.ones((len(lines), dim* targetSize))* (-2)
     w2v = load_w2v()
     embedding = np.zeros(dim)
-    print(type(w2v))
+    #print(type(w2v))
      # Build  representations. if a tweet is longer than targetSize cut it to target size
     for i, l in enumerate(splitLines):
         if len(l) > targetSize:
             l = l[:targetSize]
-        if i< 30:
-            print(l)
+        #if i< 30:
+            #print(l)
         for j, w in enumerate(l):
             # if word is known add its represention, otherwise treat it as 0.              
-            if i< 30:
-                print(w)
+            #if i< 30:
+                #print(w)
             if w in w2v:
                 mat[i, j*300: (j+1)*300] = w2v[str(w)]
     

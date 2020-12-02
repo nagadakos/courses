@@ -315,11 +315,14 @@ def get_target_cols(df, target, saveFile=None):
 # -------------------------------------------------------------------------------------------------------
 #
 # -------------------------------------------------------------------------------------------------------
-def process_data(file = 'Data/training-Obama-Romney-tweets.xlsx', obamaCentric = False, sheet = 0):
+#def process_data(file = 'Data/training-Obama-Romney-tweets.xlsx', obamaCentric = False, sheet = 0, trainMode = True):
+def process_data(file = 'Data/final-testData-no-label-Obama-tweets.xlsx', obamaCentric = False, sheet = 0, trainMode = False):
     
     rootFile = file.split('.')[0]
-    mod = 'Romney_to_Obama_' if (sheet == 1 or sheet == 'Romney') else ''
-    mod = 'Romney_to_Obama_' if obamaCentric else ''
+    mod = ''
+    if trainMode:
+        mod = 'Romney_to_Obama_' if (sheet == 1 or sheet == 'Romney') else ''
+        mod = 'Romney_to_Obama_' if obamaCentric else ''
     dataFile = '_'.join((rootFile, mod+'filtered_data.txt'))
     labelFile = '_'.join((rootFile, mod+'filtered_labels.txt'))
     
@@ -328,53 +331,55 @@ def process_data(file = 'Data/training-Obama-Romney-tweets.xlsx', obamaCentric =
         with open(labelFile) as f:
             labels = f.readlines()
     else:
-        df = pd.read_excel(file, sheet_name = sheet)
+        df = pd.read_excel(file, sheet_name = sheet, header = None)
         # Extract only the tweets and labels; dates and the rest are irrelevant
         # Label Legend: 1: positive, -1: negative, 0: neutral, 2: mixed
-        data = df['Anootated tweet'][1:]
-        labels2 = df['Unnamed: 4'][1:].values.tolist()
-        labels2 = [str(l) for l in labels2]
-        for i, l in enumerate(labels2):
-            try:
-                if type(data.iloc[i]) != float:
-                    labels2[i] = int(l)
-                else:
-                    labels2[i] = 5 # for that annoyiing nan data case
-            except:
-                labels2[i] = 5
-            #if (l != 'nan') & (l != 'irrelevant') & (l !='irrevelant') & (type(data.iloc[i]) != float) &(l != '!!!!'):
-            #    print(l)
-            #    labels2[i] = int(l)
-            #elif (l == 'irrelevant') or (l =='irrevelant') or (l == 'nan') or (type(data.iloc[i]) == float) or (l == '!!!!'):
-            #    labels2[i] = 5
+        #data = df['Anootated tweet'][1:]
+        #labels2 = df['Unnamed: 4'][1:].values.tolist()
+        data = df[1]
+        if trainMode:
+            labels2 = df[1].values.tolist()
+            labels2 = [str(l) for l in labels2]
+            for i, l in enumerate(labels2):
+                try:
+                    if type(data.iloc[i]) != float:
+                        labels2[i] = int(l)
+                    else:
+                        labels2[i] = 5 # for that annoyiing nan data case
+                except:
+                    labels2[i] = 5
+          
+            labels = np.asarray(labels2)
 
-        labels = np.asarray(labels2)
-        
-        # Diseregard all tweets of mixed type, that is class 2
-        idxs = np.where((labels != 2) & (labels != 5))[0]
-        data = data.iloc[idxs].values.tolist()
-        
-        # Flip labels so positive refers to Obama always
-        if obamaCentric:
-            labels = labels[idxs] * -1
+            # Diseregard all tweets of mixed type, that is class 2
+            idxs = np.where((labels != 2) & (labels != 5))[0]
+            data = data.iloc[idxs].values.tolist()
+
+            # Flip labels so positive refers to Obama always
+            if obamaCentric:
+                labels = labels[idxs] * -1
+            else:
+                labels = labels[idxs]
+            labels = list(labels)
         else:
-            labels = labels[idxs]
-        labels = list(labels)
-        
+            data = df[1].iloc[:].values.tolist() 
         # Clear tweeter relics
         for i, l in enumerate(data):
+            #print(l)
             data[i] = re.sub(r'(<e>|</e>|<a>|</a>)', '', l)
-        
+          
         with open(dataFile, 'w', encoding='utf-8') as f:
             for i, d in enumerate(data):
                 # For a multi lined tweet just keep the first line.   
                 f.write("{} \n".format(d.split('\n')[0]))
-        with open('_'.join((rootFile, mod+'filtered_data_idxs.txt')), 'w', encoding='utf-8') as f:
-            for i, d in enumerate(data):
-                f.write("{}\n".format(idxs[i]))
-        with open(labelFile, 'w', encoding='utf-8') as f:
-            for i, l in enumerate(labels):
-                f.write("{} \n".format(l))
+
+        if trainMode:
+            with open('_'.join((rootFile, mod+'filtered_data_idxs.txt')), 'w', encoding='utf-8') as f:
+                for i, d in enumerate(data):
+                    f.write("{}\n".format(idxs[i]))
+            with open(labelFile, 'w', encoding='utf-8') as f:
+                for i, l in enumerate(labels):
+                    f.write("{} \n".format(l))
     
     # removing Accents and expanding contractions takes time!
     steps = {'rmvStopWords':True, 'rmvAccents' : True, 'expandContractions' : False, 'convNumberWords' : False, 'rmvCustom':True
@@ -385,10 +390,11 @@ def process_data(file = 'Data/training-Obama-Romney-tweets.xlsx', obamaCentric =
     # Normalize texts
     outLabel = mod + 'corrected2_normalized_no_stop_words' 
     normalize_texts('_'.join((rootFile, mod+'filtered_data.txt')), outLabel= outLabel,steps = steps)
-    with open('_'.join((rootFile, outLabel, 'labels.txt')), 'w', encoding='utf-8') as f:
-            for i, l in enumerate(labels):
-                f.write("{} \n".format(str(l).strip('\n')))
-                #np.savetxt(f, l)
+    if trainMode:
+        with open('_'.join((rootFile, outLabel, 'labels.txt')), 'w', encoding='utf-8') as f:
+                for i, l in enumerate(labels):
+                    f.write("{} \n".format(str(l).strip('\n')))
+                    #np.savetxt(f, l)
    
 # -------------------------------------------------------------------
 

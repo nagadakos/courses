@@ -323,7 +323,7 @@ class ClassifierFrame(nn.Module):
         else:
             print("Loading saved model: {} to model {}@{}".format(loadPath, self.descr, hex(id(self))))
 
-        self.encoder.load_state_dict(torch.load(loadPath, map_location= torch.device(device)) 
+        self.encoder.load_state_dict(torch.load(loadPath, map_location= torch.device(device)))
 
     #-------------------------------------------------------------------------------------------------------------------------------
 
