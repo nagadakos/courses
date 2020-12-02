@@ -39,13 +39,17 @@ class Tweets(Dataset):
         setLowerLimit = 0 if skipPerCent is None else int(allData.shape[0]* skipPerCent)
         setUpperLimit = setLowerLimit + int(allData.shape[0] * setSize)
         print("Lower Limit: {}, Upper Limit: {}".format(setLowerLimit, setUpperLimit))
-        # Randomly select indeces for split
-        randomizedOrder = torch.randperm(allData.shape[0]) if randInputOrder is None else randInputOrder
-        self.randOrder = randomizedOrder
-        # Select the first samples for training
-        setIdxs = randomizedOrder[setLowerLimit:setUpperLimit]
-        self.data = allData[setIdxs]
-        self.target = allTargets[setIdxs]
+        if randInputOrder is not False:
+            # Randomly select indeces for split
+            randomizedOrder = torch.randperm(allData.shape[0]) if randInputOrder is None else randInputOrder
+            self.randOrder = randomizedOrder
+            # Select the first samples for training
+            setIdxs = randomizedOrder[setLowerLimit:setUpperLimit]
+            self.data = allData[setIdxs]
+            self.target = allTargets[setIdxs]
+        else:
+            self.data= allData
+            self.target = allTargets
         self.N = self.data.shape[0]
         self.dataDim = self.data.shape[1]
     # --------------------------------------------------------------------------------
@@ -126,9 +130,12 @@ class Tweets(Dataset):
                 np.save(saveFile,m)
         else:
             np.load(savedRepsFile)
-            
-        targets = np.loadtxt(labelFile)
-        targets += 1 # Need to be non negative. Tweets class has -1 fro negative sentiment label
+        # If data is not for just prediction    
+        if labelFile is not None:    
+            targets = np.loadtxt(labelFile)
+            targets += 1 # Need to be non negative. Tweets class has -1 fro negative sentiment label
+        else:
+            targets = np.ones_like(m[:,0]) *-1 # dummy targets for prediction; used to work with the above code
         return torch.from_numpy(m).type(torch.float32), torch.from_numpy(targets).type(torch.long)
 
 # End of Tweets class

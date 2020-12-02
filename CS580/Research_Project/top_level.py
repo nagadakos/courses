@@ -140,7 +140,7 @@ def main():
 
         # Final report
         model.report()
-   
+        model.save()
     
 # Define behavior if this module is the main executable. Standard code.
 if __name__ == '__main__':

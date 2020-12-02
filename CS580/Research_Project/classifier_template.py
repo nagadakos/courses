@@ -116,7 +116,7 @@ class ClassifierFrame(nn.Module):
                         resultsLabel = '', historyLabel = ''):
 
         sep = self.sep
-        resultsLabel = resultsLabel if resultsLabel is not '' else sep.join((self.descr, 'results'))
+        resultsLabel = resultsLabel if resultsLabel != '' else sep.join((self.descr, 'results'))
         if filePath is not None:
             rootBasePath  = filePath
             saveResFolder = os.path.join(saveFile,'Logs', 'Results')
@@ -232,8 +232,11 @@ class ClassifierFrame(nn.Module):
     #----------------------------------------------------------------------------------------------------
 
     # Testing and error reports are done here
-    def predict():
-        pass
+    def predict(self, x):
+        
+        output = self.encoder.forward(x)
+        pred = output.max(dim=1)
+        return pred
    
     #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -282,7 +285,7 @@ class ClassifierFrame(nn.Module):
         os.chdir(savePath)
         for i, f in enumerate(self.plots):
             if f is not None:
-                if plotLabel is not '':
+                if plotLabel != '':
                     fileName = self.sep.join((plotLabel, str(i)+'.png'))
                 else:
                     fileName = self.sep.join( (self.defPlotSaveTitle, str(i), defTitleExt+'.png') )
@@ -297,11 +300,11 @@ class ClassifierFrame(nn.Module):
 
         if savePath is None:
 
-            savePath =elf.saveModelsFolder
+            savePath = self.saveModelsFolder
             # Create the Target Directory if does not exist.
             if not os.path.exists(savePath):
                 os.makedirs(savePath)
-        modelLabel = modelLabel if modelLabel is not '' else self.defPlotSaveTitle
+        modelLabel = modelLabel if modelLabel != '' else self.defPlotSaveTitle
         savePath = os.path.join(savePath, modelLabel)
         print("****\nSaving model: {}-->id: {} at {}\n****".format(self.descr, hex(id(self)), savePath))
 
@@ -320,7 +323,7 @@ class ClassifierFrame(nn.Module):
         else:
             print("Loading saved model: {} to model {}@{}".format(loadPath, self.descr, hex(id(self))))
 
-        self.load_state_dict(torch.load(loadPath)) 
+        self.encoder.load_state_dict(torch.load(loadPath)) 
 
     #-------------------------------------------------------------------------------------------------------------------------------
 

@@ -278,7 +278,9 @@ class SimpleConvolutional(nn.Module):
         pass
     # ------------------
     def predict(self, x, **kwargs):
-        return self.forward(x)
+        with torch.no_grad():
+            preds = F.softmax(self.forward(x)).max(dim=1) 
+        return preds
     # ------------------
 
     def report(self, **kwargs):

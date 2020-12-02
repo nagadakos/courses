@@ -113,7 +113,7 @@ def test_classifier(model, testLoader, device, lossFn, **kwargs):
             # Sum all loss terms and tern then into a numpy number for late use.
             loss  += lossFn(output, label).item()
             # Find the max along a row but maitain the original dimenions.
-            # in this case  a 10 -dimensional array.
+            # in this case  a 3 -dimensional array.
             pred   = output.max(dim = 1, keepdim = True)
             # Select the indexes of the prediction maxes.
             # Reshape the output vector in the same form of the label one, so they 
