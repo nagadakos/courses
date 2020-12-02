@@ -112,6 +112,7 @@ class Tweets(Dataset):
             if os.path.exists(repFile):
                  m = np.load(repFile)
             else:
+                print('Creating File ', repFile)
                 # Read all lines of tweet file, store them as list of strings
                 with open(tweetFile) as f:
                     lines = f.read().splitlines() 
@@ -128,6 +129,7 @@ class Tweets(Dataset):
                 # Save reps to disk for future use
                 saveFile = '_'.join((rootPath, repType.split('R')[0] +'_w2v_rep.npy'))
                 np.save(saveFile,m)
+                np.savetxt(saveFile.split('.')[0]+'.txt', m)
         else:
             np.load(savedRepsFile)
         # If data is not for just prediction    
@@ -147,6 +149,7 @@ def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7):
     totalLines = 0
     for l in lines:
         splitLine = l.split(' ')
+        splitLine = [p for p in splitLine if p != '']
         lineLen = len(splitLine)
         totalLines += 1
         lengths.append(lineLen)
@@ -177,14 +180,19 @@ def tweet_summary_reps(lines, lenSizeType = 'maxVal', targetDesnity = 0.7):
     mat = np.zeros((len(lines), dim* targetSize))
     w2v = load_w2v()
     embedding = np.zeros(dim)
+    print(type(w2v))
      # Build  representations. if a tweet is longer than targetSize cut it to target size
     for i, l in enumerate(splitLines):
         if len(l) > targetSize:
             l = l[:targetSize]
+        if i< 30:
+            print(l)
         for j, w in enumerate(l):
             # if word is known add its represention, otherwise treat it as 0.              
+            if i< 30:
+                print(w)
             if w in w2v:
-                mat[i, j*300: (j+1)*300] = w2v[w]
+                mat[i, j*300: (j+1)*300] = w2v[str(w)]
     
     print("Tweet_word2vec size: {}".format(mat.shape))
 

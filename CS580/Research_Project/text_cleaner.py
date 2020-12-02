@@ -186,9 +186,8 @@ def normalize_texts(texts, inTextLabel = '', outLabel = 'normalized',
         cont = Contractions(kv_model=model)
         cont.load_models()
     for i, t in enumerate(texts):
-        #print(t)
         if os.path.isfile(t):
-            f2 = t.split('_')[0]+'_' +outLabel +'.txt' # in name is patientx.txt -> patientx_corrected.txt
+            f2 = t.rsplit('_',2)[0]+'_' +outLabel +'.txt' # in name is patientx.txt -> patientx_corrected.txt
             fr, fw = open(t, 'r', encoding='utf8'), open(f2,'w+', encoding='utf8')
         else:
             f2 = inTextLabel+'_' +outLabel +'.txt' # in name is patientx.txt -> patientx_corrected.txt
@@ -320,6 +319,7 @@ def process_data(file = 'Data/training-Obama-Romney-tweets.xlsx', obamaCentric =
     
     rootFile = file.split('.')[0]
     mod = 'Romney_to_Obama_' if (sheet == 1 or sheet == 'Romney') else ''
+    mod = 'Romney_to_Obama_' if obamaCentric else ''
     dataFile = '_'.join((rootFile, mod+'filtered_data.txt'))
     labelFile = '_'.join((rootFile, mod+'filtered_labels.txt'))
     
@@ -371,7 +371,7 @@ def process_data(file = 'Data/training-Obama-Romney-tweets.xlsx', obamaCentric =
                 f.write("{} \n".format(d.split('\n')[0]))
         with open('_'.join((rootFile, mod+'filtered_data_idxs.txt')), 'w', encoding='utf-8') as f:
             for i, d in enumerate(data):
-                f.write("{} {}\n".format(d, idxs[i]))
+                f.write("{}\n".format(idxs[i]))
         with open(labelFile, 'w', encoding='utf-8') as f:
             for i, l in enumerate(labels):
                 f.write("{} \n".format(l))
