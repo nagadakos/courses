@@ -66,7 +66,7 @@ else:
                         help='data file name containing the discrete files.')
     parser.add_argument('--data_sample_size', type=int, default=1000,#854,
                         help='the number of samples of data')
-    parser.add_argument('--data_variable_size', type=int, default=12,#11
+    parser.add_argument('--data_variable_size', type=int, default=5,#11
                         help='the number of variables in synthetic generated data')
     parser.add_argument('--graph_type', type=str, default='erdos-renyi',
                         help='the type of DAG graph by generation method')
@@ -115,7 +115,7 @@ parser.add_argument('--decoder-hidden', type=int, default=64,
                     help='Number of hidden units.')
 parser.add_argument('--temp', type=float, default=0.5,
                     help='Temperature for Gumbel softmax.')
-parser.add_argument('--k_max_iter', type = int, default = 20,
+parser.add_argument('--k_max_iter', type = int, default = 5,
                     help ='the max iteration number for searching lambda and c')
 
 parser.add_argument('--encoder', type=str, default='mlp',
@@ -588,7 +588,8 @@ except KeyboardInterrupt:
             dataFolderName = args.data_dir.split('/')[-2] + '_' + args.data_dir.split('/')[-1] 
             print(dataFolderName)
         else:
-            dataFolderName = args.data_dir.split('\\')[-2] #.split('{}'.format(os.pathsep)))
+            dataFolderName = args.data_dir.split('/')[-2] + '_' + args.data_dir.split('/')[-1] 
+            print(dataFolderName)
     else:
         dataFolderName = 'dgn_synthetic'
     file1 = os.path.join('Results', '{}_{}'.format(dataFolderName,'trueG'))
@@ -611,7 +612,9 @@ if myParams:
         dataFolderName = args.data_dir.split('/')[-2] + '_' + args.data_dir.split('/')[-1] 
         print(dataFolderName)
     else:
-        dataFolderName = args.data_dir.split('\\')[-2] #.split('{}'.format(os.pathsep)))
+        print(args.data_dir)
+        dataFolderName = args.data_dir.split('/')[-2] + '_' + args.data_dir.split('/')[-1] 
+        print(dataFolderName)
 else:
     dataFolderName = 'dgn_synthetic'
 file1 = os.path.join('Results', '{}_{}'.format(dataFolderName,'trueG'))
